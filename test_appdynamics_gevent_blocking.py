@@ -61,3 +61,10 @@ def test_zmq_module():
     from appdynamics.agent.core.transport import zmq
 
     assert zmq.__name__.split(".")[-1] == "green", f"{zmq.__name__} is not 'green'"
+    
+    
+    
+    
+# python test_appdynamics_blocking.py vs python test_appdynamics_blocking.py green
+# it seems that we can monkey patch it by replacing the zmq import in appdynamics.agent.core.transport
+# the whole zmq stuff is a little strange as you cannot import anything from appdynamics_bindeps.zmq unless you have imported appdynamics.agent.core.transport directly or indirectly
