@@ -68,3 +68,6 @@ def test_zmq_module():
 # python test_appdynamics_blocking.py vs python test_appdynamics_blocking.py green
 # it seems that we can monkey patch it by replacing the zmq import in appdynamics.agent.core.transport
 # the whole zmq stuff is a little strange as you cannot import anything from appdynamics_bindeps.zmq unless you have imported appdynamics.agent.core.transport directly or indirectly
+# so my summary on testing appdynamics is that its zmq is blocking.
+# they use a patched version of zmq with an extra zmq flag zmq.POLLBIND which has a commented # appd custom
+# not sure what it does, but if it doesnt magically turns a blocking in a not blocking operation i am pretty sure its blocking
