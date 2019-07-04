@@ -11,56 +11,42 @@ requires:
 * pytest
 * appdynamics
 """
-import gevent
+
 from gevent import monkey
 
-
 monkey.patch_all()
+import gevent
 
+from appdynamics.agent.core import transport
+import sys
 
-def poll_zqm(zmq_module):
-    output = []
-
-    def poll():
-        with zmq_module.Context.instance() as ctx:
-            addr = f"ipc:///tmp/test_{zmq_module.__name__}"
-            socket = ctx.socket(zmq_module.ROUTER)
-            socket.connect(addr)
-            output.append(f"pre socket.poll: {ctx}")
-            socket.poll(100)
-            output.append("post socket.poll")
-            socket.close()
-
-    def other():
-        output.append("other")
-
-    gevent.joinall([gevent.spawn(poll), gevent.spawn(other)])
-
-    assert len(output) == 3
-    return output
-
-
-def test_zmq_blocking():
-    from appdynamics.agent.core import transport
-
-    result = poll_zqm(transport.zmq)
-
-    assert result[1] == "other", "socket.poll() is expected to yield to 'other()'"
-
-
-def test_zmq_green():
-    from appdynamics.agent.core import transport
+if len(sys.argv) == 2 and sys.argv[1] == "green":
     from appdynamics_bindeps.zmq import green as green_zmq
+    transport.zmq = green_zmq
 
-    result = poll_zqm(green_zmq)
+from appdynamics.agent.core.transport import zmq
 
-    assert result[1] == "other", "socket.poll() is expected to yield to 'other()'"
+print(f"using zmq lib: at {transport.zmq.__file__}")
+
+MSG = ["ZMQ", "is", "NOT", "green!"]
 
 
-def test_zmq_module():
-    from appdynamics.agent.core.transport import zmq
+def test_green():
+    ctx = zmq.Context.instance()
+    addr = f"ipc:///tmp/{__file__}"
+    socket = ctx.socket(zmq.ROUTER)
+    socket.connect(addr)
+    socket.poll(100, zmq.POLLBIND)
+    print(" ".join(MSG))
+    socket.close()
 
-    assert zmq.__name__.split(".")[-1] == "green", f"{zmq.__name__} is not 'green'"
+
+def set_green():
+    MSG.pop(2)
+
+
+jobs = [gevent.spawn(test_green), gevent.spawn(set_green)]
+gevent.joinall(jobs)
     
     
     
